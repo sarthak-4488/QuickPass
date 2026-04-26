@@ -13,9 +13,7 @@ from .forms import StudentRegistrationForm, LoginForm
 from .utils import generate_pdf_pass
 from .decorators import student_required, clerk_required
 
-# -------------------------
-# REGISTER VIEW
-# -------------------------
+
 def register(request):
     if request.method == 'POST':
         form = StudentRegistrationForm(request.POST, request.FILES)
@@ -47,9 +45,7 @@ def register(request):
     return render(request, 'register.html', {'form': form})
 
 
-# -------------------------
-# LOGIN VIEW WITH ROLE REDIRECT
-# -------------------------
+
 def user_login(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
@@ -73,9 +69,7 @@ def user_login(request):
     return render(request, 'login.html', {'form': form})
 
 
-# -------------------------
-# STUDENT VIEWS
-# -------------------------
+
 @never_cache
 @login_required(login_url='login')
 @student_required
@@ -164,17 +158,19 @@ def confirm_payment(request, town_id):
                 year=current_year,
                 is_renewed=True
             )
-            messages.success(request, "Payment confirmed! Your bus pass has been created.")
-            # optionally generate PDF or do something else here
+
+           
+            pdf_path = generate_pdf_pass(student_obj, current_month, current_year, selected_town)
+            return FileResponse(open(pdf_path, 'rb'),
+                                as_attachment=True,
+                                filename=f"{student_obj.user.username}_bus_pass.pdf")
+
         else:
             messages.warning(request, "You have already renewed your pass for this month.")
 
-    # Redirect back to the bus payment page so user sees messages there
     return redirect('bus_payment', town_id=town_id)
 
-# -------------------------
-# CLERK DASHBOARD
-# -------------------------
+
 @never_cache
 @login_required(login_url='login')
 @clerk_required
